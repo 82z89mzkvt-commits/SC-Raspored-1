@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SC Raspored</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8601C; --orange-dark: #C44E12; --black: #111111;
+    --gray-dark: #2A2A2A; --gray-mid: #555555; --gray-light: #AAAAAA;
+    --gray-bg: #F2F2F2; --white: #FFFFFF; --success: #2E7D32;
+    --danger: #C62828; --border: #E0E0E0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', sans-serif; background: var(--gray-bg); color: var(--black); min-height: 100vh; }
+
+  #loginScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--black) 0%, var(--gray-dark) 60%, #3A1A08 100%);
+  }
+  .login-box { background: var(--white); border-radius: 4px; padding: 48px 40px; width: 360px; max-width: 95vw; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+  .login-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 42px; font-weight: 800; letter-spacing: -1px; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+  .login-logo span { color: var(--black); }
+  .login-subtitle { font-size: 13px; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 36px; }
+  .field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gray-mid); margin-bottom: 6px; display: block; }
+  .field-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 2px; font-size: 15px; font-family: 'Barlow', sans-serif; transition: border-color 0.2s; outline: none; margin-bottom: 16px; }
+  .field-input:focus { border-color: var(--orange); }
+  .pin-input { letter-spacing: 8px; font-weight: 600; font-size: 22px; }
+  .btn-primary { width: 100%; padding: 14px; background: var(--orange); color: var(--white); border: none; border-radius: 2px; font-size: 15px; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: background 0.2s; margin-top: 8px; }
+  .btn-primary:hover { background: var(--orange-dark); }
+  .btn-primary:disabled { background: var(--gray-light); cursor: not-allowed; }
+  .login-error { color: var(--danger); font-size: 13px; margin-top: 12px; text-align: center; }
+
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  header { background: var(--black); color: var(--white); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+  .header-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-logo span { color: var(--orange); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .user-badge { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; background: var(--gray-dark); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
+  .role-tag { font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 700; letter-spacing: 0.5px; }
+  .role-tag.admin { background: var(--orange); color: var(--white); }
+  .role-tag.employee { background: var(--gray-mid); color: var(--white); }
+  .btn-logout { background: none; border: 1px solid #444; color: var(--gray-light); padding: 5px 12px; border-radius: 2px; cursor: pointer; font-size: 12px; font-family: 'Barlow', sans-serif; transition: all 0.2s; }
+  .btn-logout:hover { border-color: var(--orange); color: var(--orange); }
+
+  .nav-tabs { background: var(--white); border-bottom: 2px solid var(--border); display: flex; gap: 0; overflow-x: auto; padding: 0 16px; }
+  .nav-tab { padding: 14px 20px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; border: none; background: none; color: var(--gray-mid); border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.2s; font-family: 'Barlow', sans-serif; }
+  .nav-tab:hover { color: var(--orange); }
+  .nav-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+  main { flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 20px; color: var(--black); display: flex; align-items: center; gap: 12px; }
+  .section-title::after { content: ''; flex: 1; height: 2px; background: var(--border); }
+
+  .card { background: var(--white); border-radius: 4px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; color: var(--gray-dark); }
+
+  .btn { padding: 9px 16px; border-radius: 2px; font-size: 13px; font-weight: 600; font-family: 'Barlow', sans-serif; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-orange { background: var(--orange); color: var(--white); }
+  .btn-orange:hover { background: var(--orange-dark); }
+  .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--gray-dark); }
+  .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-danger:hover { background: #a01010; }
+
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-mid); }
+  .form-group input, .form-group select { padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 2px; font-size: 14px; font-family: 'Barlow', sans-serif; outline: none; transition: border-color 0.2s; min-width: 140px; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--orange); }
+
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-mid); border-bottom: 2px solid var(--border); background: #FAFAFA; }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #FFF8F5; }
+
+  .week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .week-label { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; min-width: 200px; }
+  .schedule-wrap { overflow-x: auto; }
+  .schedule-table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 12px; }
+  .schedule-table th { background: var(--black); color: var(--white); padding: 10px 8px; text-align: center; font-size: 11px; letter-spacing: 0.5px; font-weight: 700; white-space: nowrap; }
+  .schedule-table th:first-child { text-align: left; min-width: 130px; background: #222; }
+  .schedule-table td { border: 1px solid var(--border); padding: 4px; vertical-align: top; text-align: center; min-width: 110px; }
+  .schedule-table td:first-child { text-align: left; padding: 8px 10px; font-weight: 600; background: #FAFAFA; font-size: 12px; }
+  .shift-time { font-size: 10px; color: var(--gray-mid); margin-bottom: 3px; }
+  .shift-slots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; margin-bottom: 3px; }
+  .slot-emp { font-size: 10px; background: #E8F5E9; color: #1B5E20; border-radius: 2px; padding: 1px 5px; font-weight: 600; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slot-off { font-size: 11px; color: var(--gray-light); font-style: italic; }
+  .slot-open { font-size: 10px; color: var(--orange); font-weight: 600; }
+  .btn-sign-up { width: 100%; padding: 3px 0; font-size: 10px; font-weight: 700; font-family: 'Barlow', sans-serif; background: var(--orange); color: white; border: none; border-radius: 2px; cursor: pointer; margin-top: 2px; }
+  .btn-sign-up:hover { background: var(--orange-dark); }
+  .capacity-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 3px; }
+  .capacity-fill { height: 100%; border-radius: 2px; background: var(--success); transition: width 0.3s; }
+  .capacity-fill.full { background: var(--danger); }
+
+  .notif-dot { display: inline-block; width: 8px; height: 8px; background: var(--orange); border-radius: 50%; margin-left: 4px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .notif-banner { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); border: 1px solid var(--orange); border-radius: 3px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .notif-close { margin-left: auto; cursor: pointer; color: var(--gray-mid); font-size: 16px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 4px; padding: 28px; width: 440px; max-width: 95vw; box-shadow: 0 16px 48px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 18px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .badge-orange { background: #FFF3E0; color: var(--orange); border: 1px solid #FFE0B2; }
+  .badge-gray { background: var(--gray-bg); color: var(--gray-mid); border: 1px solid var(--border); }
+
+  .pin-show { font-family: monospace; font-size: 18px; letter-spacing: 4px; color: var(--orange); font-weight: 700; }
+  .empty-state { text-align: center; padding: 40px; color: var(--gray-light); font-size: 14px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:700px){ .two-col { grid-template-columns: 1fr; } }
+  .info-box { background: #FFF8F5; border-left: 3px solid var(--orange); padding: 10px 14px; border-radius: 2px; font-size: 13px; margin-bottom: 12px; }
+  .emp-check-list { max-height: 180px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 2px; padding: 8px; }
+  .emp-check-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+  .emp-check-item input { cursor: pointer; accent-color: var(--orange); }
+  .loading { text-align:center; padding: 40px; color: var(--gray-mid); font-size:14px; }
+  .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--border); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">SC<span> Raspored</span></div>
+    <div class="login-subtitle">Sava Centar Beograd</div>
+    <label class="field-label">Korisničko ime</label>
+    <input class="field-input" id="loginUser" type="text" placeholder="ime.prezime" autocomplete="username">
+    <label class="field-label">PIN kod</label>
+    <input class="field-input pin-input" id="loginPin" type="password" maxlength="6" placeholder="••••" autocomplete="current-password">
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">PRIJAVA</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-logo">SC<span> Raspored</span></div>
+    <div class="header-right">
+      <div class="user-badge">
+        <span id="headerName">—</span>
+        <span class="role-tag" id="headerRole">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Odjava</button>
+    </div>
+  </header>
+  <div class="nav-tabs" id="navTabs"></div>
+  <main>
+    <div class="section active" id="sec-raspored">
+      <div id="notifContainer"></div>
+      <div class="section-title">Nedeljni Raspored</div>
+      <div class="week-nav">
+        <button class="btn btn-outline" onclick="prevWeek()">&#8592; Prethodna</button>
+        <div class="week-label" id="weekLabel"></div>
+        <button class="btn btn-outline" onclick="nextWeek()">Sledeca &#8594;</button>
+      </div>
+      <div class="card">
+        <div class="schedule-wrap">
+          <table class="schedule-table" id="scheduleTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-zaposleni">
+      <div class="section-title">Zaposleni</div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Dodaj Novog Korisnika</div>
+          <div class="form-group" style="margin-bottom:10px"><label>Puno ime</label><input type="text" id="newEmpName" placeholder="Ime i Prezime"></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Korisničko ime</label><input type="text" id="newEmpUser" placeholder="ime.prezime"></div>
+          <div class="form-group" style="margin-bottom:10px"><label>PIN (4-6 cifara)</label><input type="number" id="newEmpPin" placeholder="1234"></div>
+          <div class="form-group" style="margin-bottom:14px"><label>Uloga</label><select id="newEmpRole"><option value="employee">Zaposleni</option><option value="admin">Admin</option></select></div>
+          <div id="addEmpError" style="color:var(--danger);font-size:12px;margin-bottom:8px;"></div>
+          <button class="btn btn-orange" onclick="addEmployee()">+ Dodaj Korisnika</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Svi Korisnici</div>
+          <div id="empTableWrap"><div class="loading"><span class="spinner"></span>Učitavanje...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-smene">
+      <div class="section-title">Upravljanje Smenama</div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Dodaj Smenu</div>
+          <div class="form-group" style="margin-bottom:10px"><label>Naziv smene</label><input type="text" id="shiftName" placeholder="npr. Jutarnja"></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Vreme početka</label><input type="time" id="shiftStart" value="07:00"></div>
+          <div class="form-group" style="margin-bottom:14px"><label>Vreme kraja</label><input type="time" id="shiftEnd" value="15:00"></div>
+          <div class="form-group" style="margin-bottom:14px"><label>Tip smene</label><select id="shiftType"><option value="morning">Jutarnja</option><option value="afternoon">Popodnevna</option><option value="night">Nocna</option></select></div>
+          <div id="addShiftError" style="color:var(--danger);font-size:12px;margin-bottom:8px;"></div>
+          <button class="btn btn-orange" onclick="addShift()">+ Dodaj Smenu</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Definisane Smene</div>
+          <div id="shiftTableWrap"><div class="loading"><span class="spinner"></span>Učitavanje...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-settings">
+      <div class="section-title">Podešavanja Rasporeda</div>
+      <div class="info-box">Izaberite nedelju, smenu i dan — unesite potreban broj zaposlenih i izaberite ko može da se prijavi.</div>
+      <div class="card">
+        <div class="card-title">Unesi Potreban Broj Zaposlenih</div>
+        <div class="form-row">
+          <div class="form-group"><label>Nedelja</label><select id="setWeek" style="min-width:180px"></select></div>
+          <div class="form-group"><label>Dan</label><select id="setDay">
+            <option value="0">Ponedeljak</option><option value="1">Utorak</option><option value="2">Sreda</option>
+            <option value="3">Cetvrtak</option><option value="4">Petak</option><option value="5">Subota</option><option value="6">Nedelja</option>
+          </select></div>
+          <div class="form-group"><label>Smena</label><select id="setShift" style="min-width:180px"></select></div>
+          <div class="form-group"><label>Potrebno zaposlenih</label><input type="number" id="setCount" min="1" max="50" value="3" style="width:100px"></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--gray-mid);display:block;margin-bottom:6px;">Ko može da se prijavi</label>
+          <div class="emp-check-list" id="empAllowList"></div>
+        </div>
+        <button class="btn btn-orange" onclick="saveSlotSettings()">💾 Sačuvaj i Pošalji Obaveštenje</button>
+        <span id="settingsSaved" style="margin-left:12px;color:var(--success);font-size:13px;display:none;">✓ Sačuvano!</span>
+      </div>
+    </div>
+
+    <div class="section" id="sec-notif">
+      <div class="section-title">Obaveštenja</div>
+      <div id="notifList"></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="signupModal">
+  <div class="modal">
+    <div class="modal-title">Prijava za Smenu</div>
+    <div id="signupModalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Otkaži</button>
+      <button class="btn btn-orange" onclick="confirmSignup()">Potvrdi Prijavu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://jmcuaeorgjohoqgdmcpq.supabase.co/rest/v1';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptY3VhZW9yZ2pvaG9xZ2RtY3BxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTM3NzcsImV4cCI6MjA5NjMyOTc3N30.4onUMvornn5Pi-MPBDnI4EgM4qIxoIKh7OiZwrp-v9U';
+
+const DAYS_SR = ['Pon','Uto','Sre','Cet','Pet','Sub','Ned'];
+const DAYS_FULL = ['Ponedeljak','Utorak','Sreda','Cetvrtak','Petak','Subota','Nedelja'];
+
+let currentUser = null;
+let currentWeekIdx = 0;
+let weeks = [];
+let allUsers = [];
+let allShifts = [];
+let slotConfigs = [];
+let allSignups = [];
+let allNotifs = [];
+let pendingSignup = null;
+
+// ===== SUPABASE API =====
+async function db(method, table, body=null, query='') {
+  const url = `${SUPA_URL}/${table}${query ? '?' + query : ''}`;
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': method === 'POST' ? 'return=representation' : ''
+  };
+  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+  if (method === 'DELETE' || (method === 'PATCH' && !res.ok)) return res.ok;
+  const text = await res.text();
+  if (!text) return [];
+  try { return JSON.parse(text); } catch(e) { return []; }
+}
+
+async function dbGet(table, query='') { return db('GET', table, null, query); }
+async function dbPost(table, body) { return db('POST', table, body); }
+async function dbDelete(table, query) { return db('DELETE', table, null, query); }
+async function dbPatch(table, body, query) { return db('PATCH', table, body, query); }
+async function dbUpsert(table, body) {
+  const url = `${SUPA_URL}/${table}`;
+  const headers = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' };
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { return []; }
+}
+
+// ===== WEEKS =====
+function generateWeeks() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+  monday.setHours(0,0,0,0);
+  weeks = [];
+  for (let w = 0; w < 8; w++) {
+    const start = new Date(monday);
+    start.setDate(monday.getDate() + w * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const id = 'w' + start.toISOString().slice(0,10);
+    weeks.push({ id, start: start.toISOString(), end: end.toISOString() });
+  }
+  // Set current week
+  const today2 = new Date();
+  weeks.forEach((w, i) => {
+    if (today2 >= new Date(w.start) && today2 <= new Date(w.end)) currentWeekIdx = i;
+  });
+}
+
+// ===== HELPERS =====
+function uid() { return '_' + Math.random().toString(36).slice(2,9); }
+function fmtDate(iso) { const d=new Date(iso); return d.getDate()+'.'+(d.getMonth()+1)+'.'; }
+function fmtDateFull(iso) { const d=new Date(iso); return d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+'.'; }
+function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+function slotKey(weekId, dayIdx, shiftId) { return `${weekId}_${dayIdx}_${shiftId}`; }
+
+function getSlotConfig(weekId, dayIdx, shiftId) {
+  return slotConfigs.find(c => c.week_id===weekId && c.day_idx===dayIdx && c.shift_id===shiftId) || { count:0, allowed_users:[] };
+}
+function getSignups(weekId, dayIdx, shiftId) {
+  return allSignups.filter(s => s.week_id===weekId && s.day_idx===dayIdx && s.shift_id===shiftId);
+}
+function getUser(id) { return allUsers.find(u => u.id===id); }
+function getShift(id) { return allShifts.find(s => s.id===id); }
+
+// ===== LOAD ALL DATA =====
+async function loadAll() {
+  [allUsers, allShifts, slotConfigs, allSignups, allNotifs] = await Promise.all([
+    dbGet('users', 'order=name'),
+    dbGet('shifts', 'order=start_time'),
+    dbGet('slot_config'),
+    dbGet('signups'),
+    dbGet('notifications', 'order=ts.desc&limit=50')
+  ]);
+}
+
+// ===== LOGIN =====
+async function doLogin() {
+  const uname = document.getElementById('loginUser').value.trim();
+  const pin = document.getElementById('loginPin').value.trim();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Učitavanje...';
+  document.getElementById('loginError').textContent = '';
+
+  try {
+    const results = await dbGet('users', `username=eq.${encodeURIComponent(uname)}&pin=eq.${encodeURIComponent(pin)}`);
+    if (!results || results.length === 0 || results.message) {
+      document.getElementById('loginError').textContent = 'Pogrešno korisničko ime ili PIN.';
+      btn.disabled = false; btn.textContent = 'PRIJAVA'; return;
+    }
+    currentUser = results[0];
+    await loadAll();
+    generateWeeks();
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('headerName').textContent = currentUser.name;
+    document.getElementById('headerRole').textContent = currentUser.role === 'admin' ? 'Admin' : 'Zaposleni';
+    document.getElementById('headerRole').className = 'role-tag ' + currentUser.role;
+    buildNav();
+    renderSchedule();
+    renderNotifBanner();
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Greška pri povezivanju. Pokušajte ponovo.';
+  }
+  btn.disabled = false; btn.textContent = 'PRIJAVA';
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPin').value = '';
+}
+
+// ===== NAV =====
+function buildNav() {
+  const tabs = [{ id:'raspored', label:'Raspored' }];
+  if (isAdmin()) {
+    tabs.push({ id:'settings', label:'Podešavanja Rasporeda' });
+    tabs.push({ id:'smene', label:'Smene' });
+    tabs.push({ id:'zaposleni', label:'Zaposleni' });
+  }
+  const unread = allNotifs.length;
+  tabs.push({ id:'notif', label:'Obaveštenja', dot: unread > 0 });
+  const nav = document.getElementById('navTabs');
+  nav.innerHTML = '';
+  tabs.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-tab' + (i===0?' active':'');
+    btn.dataset.sec = t.id;
+    btn.innerHTML = t.label + (t.dot ? '<span class="notif-dot"></span>' : '');
+    btn.onclick = () => switchTab(t.id, btn);
+    nav.appendChild(btn);
+  });
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='zaposleni') renderEmployees();
+  if (id==='smene') renderShifts();
+  if (id==='settings') renderSettingsSection();
+  if (id==='notif') renderNotifications();
+}
+
+// ===== SCHEDULE =====
+function getWeekDates(week) {
+  const dates = [];
+  const start = new Date(week.start);
+  for (let i=0; i<7; i++) { const d=new Date(start); d.setDate(start.getDate()+i); dates.push(d); }
+  return dates;
+}
+function prevWeek() { if (currentWeekIdx>0) { currentWeekIdx--; renderSchedule(); } }
+async function nextWeek() { if (currentWeekIdx<weeks.length-1) { currentWeekIdx++; await loadAll(); renderSchedule(); } }
+
+function renderSchedule() {
+  const week = weeks[currentWeekIdx];
+  if (!week) return;
+  const dates = getWeekDates(week);
+  document.getElementById('weekLabel').textContent = fmtDateFull(week.start) + ' — ' + fmtDateFull(week.end);
+
+  let html = '<thead><tr><th>Smena</th>';
+  dates.forEach((d,i) => { html += `<th>${DAYS_SR[i]}<br><small>${d.getDate()}.${d.getMonth()+1}.</small></th>`; });
+  html += '</tr></thead><tbody>';
+
+  if (allShifts.length === 0) {
+    html += `<tr><td colspan="8" class="empty-state">Nema definisanih smena.</td></tr>`;
+  } else {
+    allShifts.forEach(shift => {
+      html += `<tr><td><strong>${shift.name}</strong><div class="shift-time">${shift.start_time} – ${shift.end_time}</div></td>`;
+      dates.forEach((d,dayIdx) => { html += renderCell(week.id, dayIdx, shift); });
+      html += `</tr>`;
+    });
+  }
+  html += '</tbody>';
+  document.getElementById('scheduleTable').innerHTML = html;
+}
+
+function renderCell(weekId, dayIdx, shift) {
+  const cfg = getSlotConfig(weekId, dayIdx, shift.id);
+  const signups = getSignups(weekId, dayIdx, shift.id);
+  const userId = currentUser.id;
+  const isUserSignedUp = signups.some(s => s.user_id === userId);
+  const isFull = signups.length >= cfg.count && cfg.count > 0;
+  const allowedUsers = cfg.allowed_users || [];
+  const allowed = isAdmin() || (cfg.count > 0 && (allowedUsers.length === 0 || allowedUsers.includes(userId)));
+
+  if (cfg.count === 0) {
+    return `<td><span class="slot-off">OFF</span></td>`;
+  }
+
+  const fillPct = Math.min(100, (signups.length / cfg.count) * 100);
+  let slotsHtml = '';
+  signups.forEach(s => {
+    const u = getUser(s.user_id);
+    if (u) slotsHtml += `<span class="slot-emp" title="${u.name}">${u.name.split(' ')[0]}</span>`;
+  });
+  for (let i=signups.length; i<cfg.count; i++) slotsHtml += `<span class="slot-open">[ slobodno ]</span>`;
+
+  let actionHtml = '';
+  if (!isAdmin()) {
+    if (isUserSignedUp) {
+      actionHtml = `<div style="font-size:10px;color:var(--success);font-weight:700;margin-top:3px;">✓ Prijavljeni ste</div>`;
+    } else if (!allowed) {
+      actionHtml = `<span class="slot-off">OFF</span>`;
+    } else if (isFull) {
+      actionHtml = `<div style="font-size:10px;color:var(--danger);font-weight:600;margin-top:2px;">Popunjeno</div>`;
+    } else {
+      actionHtml = `<button class="btn-sign-up" onclick="openSignupModal('${weekId}',${dayIdx},'${shift.id}')">Prijavi se</button>`;
+    }
+  } else {
+    actionHtml = `<div style="font-size:10px;color:var(--gray-mid);margin-top:2px;">${signups.length}/${cfg.count}</div>`;
+  }
+
+  const barColor = isFull ? 'var(--danger)' : 'var(--success)';
+  return `<td>
+    <div class="shift-slots">${slotsHtml}</div>
+    ${actionHtml}
+    <div class="capacity-bar"><div class="capacity-fill${isFull?' full':''}" style="width:${fillPct}%;background:${barColor}"></div></div>
+  </td>`;
+}
+
+// ===== SIGNUP =====
+function getUserShiftsInWeek(weekId, userId) {
+  return allSignups.filter(s => s.week_id === weekId && s.user_id === userId);
+}
+
+function canUserSignup(weekId, dayIdx, shiftId, userId) {
+  const weekSignups = getUserShiftsInWeek(weekId, userId);
+  if (weekSignups.length >= 2) return { ok:false, reason:'Već ste prijavljeni za 2 smene u ovoj nedelji.' };
+  const shift = getShift(shiftId);
+  if (shift.type === 'afternoon') {
+    const hasMorning = weekSignups.some(ws => {
+      if (ws.day_idx !== dayIdx) return false;
+      const s = getShift(ws.shift_id);
+      return s && s.type === 'morning';
+    });
+    if (!hasMorning) return { ok:false, reason:'Možete dodati popodnevnu smenu samo ako ste prijavljeni za jutarnju smenu istog dana.' };
+  }
+  if (shift.type === 'morning' && weekSignups.length === 1) {
+    const existing = weekSignups[0];
+    const exShift = getShift(existing.shift_id);
+    if (exShift && exShift.type !== 'morning') {
+      return { ok:false, reason:'Druga smena mora biti popodnevna smena za dan u kome radite jutarnju.' };
+    }
+  }
+  return { ok:true };
+}
+
+function openSignupModal(weekId, dayIdx, shiftId) {
+  const check = canUserSignup(weekId, dayIdx, shiftId, currentUser.id);
+  if (!check.ok) { alert(check.reason); return; }
+  pendingSignup = { weekId, dayIdx, shiftId };
+  const shift = getShift(shiftId);
+  const week = weeks[currentWeekIdx];
+  const dates = getWeekDates(week);
+  const dateStr = dates[dayIdx].getDate()+'.'+(dates[dayIdx].getMonth()+1)+'.';
+  document.getElementById('signupModalBody').innerHTML = `
+    <p style="margin-bottom:8px;">Prijavljujete se za:</p>
+    <div style="background:var(--gray-bg);padding:12px;border-radius:3px;margin-bottom:8px;">
+      <strong>${shift.name}</strong> (${shift.start_time} – ${shift.end_time})<br>
+      <span style="font-size:13px;color:var(--gray-mid);">${DAYS_FULL[dayIdx]}, ${dateStr}</span>
+    </div>
+    <p style="font-size:13px;color:var(--danger);">⚠️ Nakon prijave, smenu ne možete menjati bez odobrenja admina.</p>
+  `;
+  document.getElementById('signupModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('signupModal').classList.remove('open'); pendingSignup = null; }
+
+async function confirmSignup() {
+  const { weekId, dayIdx, shiftId } = pendingSignup;
+  const cfg = getSlotConfig(weekId, dayIdx, shiftId);
+  const signups = getSignups(weekId, dayIdx, shiftId);
+  if (signups.length >= cfg.count) { alert('Sva mesta su popunjena.'); closeModal(); return; }
+  await dbPost('signups', { id: 's'+uid(), week_id: weekId, day_idx: dayIdx, shift_id: shiftId, user_id: currentUser.id });
+  await loadAll();
+  closeModal();
+  renderSchedule();
+}
+
+// ===== EMPLOYEES =====
+async function renderEmployees() {
+  const wrap = document.getElementById('empTableWrap');
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Učitavanje...</div>';
+  allUsers = await dbGet('users', 'order=name');
+  let html = '<table class="tbl"><thead><tr><th>Ime</th><th>Kor. ime</th><th>Uloga</th><th>PIN</th><th></th></tr></thead><tbody>';
+  allUsers.forEach(u => {
+    html += `<tr>
+      <td>${u.name}</td>
+      <td style="font-family:monospace;">${u.username}</td>
+      <td><span class="badge ${u.role==='admin'?'badge-orange':'badge-gray'}">${u.role==='admin'?'Admin':'Zaposleni'}</span></td>
+      <td><span class="pin-show">${u.pin}</span></td>
+      <td>${u.id!==currentUser.id?`<button class="btn btn-danger btn-sm" onclick="removeUser('${u.id}')">Ukloni</button>`:'<span style="font-size:12px;color:var(--gray-light)">Vi</span>'}</td>
+    </tr>`;
+  });
+  if (allUsers.length === 0) html += '<tr><td colspan="5" class="empty-state">Nema korisnika.</td></tr>';
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+async function addEmployee() {
+  const name = document.getElementById('newEmpName').value.trim();
+  const username = document.getElementById('newEmpUser').value.trim();
+  const pin = document.getElementById('newEmpPin').value.trim();
+  const role = document.getElementById('newEmpRole').value;
+  const errEl = document.getElementById('addEmpError');
+  errEl.textContent = '';
+  if (!name||!username||!pin) { errEl.textContent='Popunite sva polja.'; return; }
+  if (!/^\d{4,6}$/.test(pin)) { errEl.textContent='PIN mora imati 4-6 cifara.'; return; }
+  const existing = await dbGet('users', `username=eq.${encodeURIComponent(username)}`);
+  if (existing && existing.length > 0) { errEl.textContent='Korisničko ime već postoji.'; return; }
+  const adminCount = allUsers.filter(u => u.role==='admin').length;
+  if (role==='admin' && adminCount>=20) { errEl.textContent='Maksimalan broj admina je 20.'; return; }
+  await dbPost('users', { id:'u'+uid(), name, username, pin, role });
+  document.getElementById('newEmpName').value='';
+  document.getElementById('newEmpUser').value='';
+  document.getElementById('newEmpPin').value='';
+  await renderEmployees();
+  allUsers = await dbGet('users','order=name');
+}
+
+async function removeUser(id) {
+  if (!confirm('Ukloniti korisnika?')) return;
+  await dbDelete('users', `id=eq.${id}`);
+  await renderEmployees();
+  allUsers = await dbGet('users','order=name');
+}
+
+// ===== SHIFTS =====
+async function renderShifts() {
+  const wrap = document.getElementById('shiftTableWrap');
+  wrap.innerHTML = '<div class="loading"><span class="spinner"></span>Učitavanje...</div>';
+  allShifts = await dbGet('shifts','order=start_time');
+  const types = { morning:'Jutarnja', afternoon:'Popodnevna', night:'Nocna' };
+  let html = '<table class="tbl"><thead><tr><th>Naziv</th><th>Vreme</th><th>Tip</th><th></th></tr></thead><tbody>';
+  allShifts.forEach(s => {
+    html += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.start_time} – ${s.end_time}</td>
+      <td><span class="badge badge-gray">${types[s.type]||s.type}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeShift('${s.id}')">Ukloni</button></td>
+    </tr>`;
+  });
+  if (allShifts.length === 0) html += '<tr><td colspan="4" class="empty-state">Nema smena.</td></tr>';
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+async function addShift() {
+  const name = document.getElementById('shiftName').value.trim();
+  const start = document.getElementById('shiftStart').value;
+  const end = document.getElementById('shiftEnd').value;
+  const type = document.getElementById('shiftType').value;
+  const errEl = document.getElementById('addShiftError');
+  if (!name||!start||!end) { errEl.textContent='Popunite sva polja.'; return; }
+  await dbPost('shifts', { id:'sh'+uid(), name, start_time:start, end_time:end, type });
+  document.getElementById('shiftName').value='';
+  await renderShifts();
+  allShifts = await dbGet('shifts','order=start_time');
+  renderSchedule();
+}
+
+async function removeShift(id) {
+  if (!confirm('Ukloniti smenu?')) return;
+  await dbDelete('shifts', `id=eq.${id}`);
+  await renderShifts();
+  allShifts = await dbGet('shifts','order=start_time');
+  renderSchedule();
+}
+
+// ===== SETTINGS =====
+function renderSettingsSection() {
+  const weekSel = document.getElementById('setWeek');
+  weekSel.innerHTML = '';
+  weeks.forEach((w,i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = fmtDate(w.start)+' – '+fmtDate(w.end);
+    weekSel.appendChild(opt);
+  });
+  weekSel.value = currentWeekIdx;
+
+  const shiftSel = document.getElementById('setShift');
+  shiftSel.innerHTML = '';
+  allShifts.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name+' ('+s.start_time+'–'+s.end_time+')';
+    shiftSel.appendChild(opt);
+  });
+
+  renderEmpAllowList();
+  weekSel.onchange = renderEmpAllowList;
+  document.getElementById('setDay').onchange = renderEmpAllowList;
+  shiftSel.onchange = renderEmpAllowList;
+}
+
+function renderEmpAllowList() {
+  const weekIdx = parseInt(document.getElementById('setWeek').value);
+  const dayIdx = parseInt(document.getElementById('setDay').value);
+  const shiftId = document.getElementById('setShift').value;
+  const weekId = weeks[weekIdx]?.id;
+  const cfg = getSlotConfig(weekId, dayIdx, shiftId);
+  document.getElementById('setCount').value = cfg.count || 3;
+
+  const list = document.getElementById('empAllowList');
+  const employees = allUsers.filter(u => u.role==='employee');
+  const allChecked = !cfg.allowed_users || cfg.allowed_users.length === 0;
+  let html = `<label class="emp-check-item"><input type="checkbox" id="chk_all" ${allChecked?'checked':''} onchange="toggleAllEmp(this)"> <strong>Svi zaposleni</strong></label>`;
+  employees.forEach(u => {
+    const checked = allChecked || (cfg.allowed_users && cfg.allowed_users.includes(u.id));
+    html += `<label class="emp-check-item"><input type="checkbox" class="emp-chk" value="${u.id}" ${checked?'checked':''}> ${u.name}</label>`;
+  });
+  list.innerHTML = html;
+}
+
+function toggleAllEmp(el) {
+  document.querySelectorAll('.emp-chk').forEach(c => c.checked = el.checked);
+}
+
+async function saveSlotSettings() {
+  const weekIdx = parseInt(document.getElementById('setWeek').value);
+  const dayIdx = parseInt(document.getElementById('setDay').value);
+  const shiftId = document.getElementById('setShift').value;
+  const count = parseInt(document.getElementById('setCount').value);
+  const weekId = weeks[weekIdx]?.id;
+  if (!weekId||!shiftId||!count) return;
+
+  const allChecked = document.getElementById('chk_all')?.checked;
+  let allowed_users = [];
+  if (!allChecked) {
+    document.querySelectorAll('.emp-chk:checked').forEach(c => allowed_users.push(c.value));
+  }
+
+  const existing = slotConfigs.find(c => c.week_id===weekId && c.day_idx===dayIdx && c.shift_id===shiftId);
+  if (existing) {
+    await dbPatch('slot_config', { count, allowed_users }, `week_id=eq.${weekId}&day_idx=eq.${dayIdx}&shift_id=eq.${shiftId}`);
+  } else {
+    await dbPost('slot_config', { id:'cfg'+uid(), week_id:weekId, day_idx:dayIdx, shift_id:shiftId, count, allowed_users });
+  }
+
+  const shift = getShift(shiftId);
+  const week = weeks[weekIdx];
+  const msg = `Admin je postavio raspored: ${shift.name} (${shift.start_time}–${shift.end_time}), ${DAYS_FULL[dayIdx]}, ${fmtDate(week.start)}–${fmtDate(week.end)}. Potrebno: ${count} zaposlenih.`;
+  await dbPost('notifications', { id:'n'+uid(), msg });
+
+  await loadAll();
+  renderSchedule();
+  renderEmpAllowList();
+
+  const saved = document.getElementById('settingsSaved');
+  saved.style.display='inline';
+  setTimeout(() => saved.style.display='none', 2500);
+  buildNav();
+}
+
+// ===== NOTIFICATIONS =====
+function renderNotifBanner() {
+  const c = document.getElementById('notifContainer');
+  if (allNotifs.length === 0) { c.innerHTML=''; return; }
+  const latest = allNotifs[0];
+  c.innerHTML = `<div class="notif-banner">
+    <span style="font-size:20px;">🔔</span>
+    <span>${latest.msg}</span>
+    <span class="notif-close" onclick="this.parentElement.remove()">✕</span>
+  </div>`;
+}
+
+async function renderNotifications() {
+  allNotifs = await dbGet('notifications','order=ts.desc&limit=50');
+  const list = document.getElementById('notifList');
+  if (allNotifs.length === 0) { list.innerHTML='<div class="card empty-state">Nema obaveštenja.</div>'; return; }
+  list.innerHTML = '';
+  allNotifs.forEach(n => {
+    const d = new Date(n.ts);
+    const ts = d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()+'. '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+    list.innerHTML += `<div class="card" style="border-left:3px solid var(--orange);">
+      <div style="font-size:13px;margin-bottom:4px;">${n.msg}</div>
+      <div style="font-size:11px;color:var(--gray-light);">${ts}</div>
+    </div>`;
+  });
+}
+
+// Enter key on login
+document.getElementById('loginPin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPin').focus(); });
+</script>
+</body>
+</html>
